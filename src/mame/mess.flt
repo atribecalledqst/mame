@@ -98,7 +98,14 @@ ausnz/pulsar.cpp
 ausnz/super80.cpp
 ausnz/tec1.cpp
 banctec/banctec.cpp
+bandai/angelgotchi.cpp
 bandai/design_master.cpp
+bandai/mothra.cpp
+bandai/genjintch.cpp
+bandai/umino.cpp
+bandai/morino.cpp
+bandai/yasashii.cpp
+bandai/tamaotch.cpp
 bandai/rx78.cpp
 bandai/sv8000.cpp
 bandai/tamag1.cpp

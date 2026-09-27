@@ -427,6 +427,8 @@ if CPUS["E0C6200"] then
 		MAME_DIR .. "src/devices/cpu/e0c6200/e0c6200.h",
 		MAME_DIR .. "src/devices/cpu/e0c6200/e0c6s46.cpp",
 		MAME_DIR .. "src/devices/cpu/e0c6200/e0c6s46.h",
+    MAME_DIR .. "src/devices/cpu/e0c6200/e0c6s48.cpp",
+    MAME_DIR .. "src/devices/cpu/e0c6200/e0c6s48.h",
 		MAME_DIR .. "src/devices/cpu/e0c6200/e0c6200op.cpp",
 	}
 end
