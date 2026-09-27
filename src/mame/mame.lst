@@ -3216,6 +3216,27 @@ pockchv2
 wscolor
 wswan
 
+@source:bandai/angelgotchi.cpp
+angelgotchi                     // Bandai
+
+@source:bandai/mothra.cpp
+mothra                          // Bandai
+
+@source:bandai/genjintch.cpp
+genjintch                       // Bandai
+
+@source:bandai/umino.cpp
+umino                           // Bandai
+
+@source:bandai/morino.cpp
+morino                          // Bandai
+
+@source:bandai/yasashii.cpp
+yasashii                          // Bandai
+
+@source:bandai/tamaotch.cpp
+tamaotch                          // Bandai
+
 @source:barcrest/mpu1.cpp
 m_bappl2
 m_bapple
