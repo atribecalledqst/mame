@@ -40,17 +40,9 @@ private:
 	void tamaotch_palette(palette_device &palette) const;
 	E0C6S48_PIXEL_UPDATE(pixel_update);
 
-	virtual void machine_start() override;
-
-	required_device<e0c6s48_device> m_maincpu;
+	required_device<e0c6s48_device_2> m_maincpu;
 	output_finder<16, 40> m_out_x;
 };
-
-void tamaotchg1_state::machine_start()
-{
-	m_out_x.resolve();
-}
-
 
 /*******************************************************************************
     Video
@@ -105,10 +97,10 @@ INPUT_CHANGED_MEMBER(tamaotchg1_state::input_changed)
 
 static INPUT_PORTS_START( tamaotch )
 	PORT_START("K0")
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_CHANGED_MEMBER(DEVICE_SELF, tamaotchg1_state, input_changed, E0C6S48_LINE_K00)
-	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_CHANGED_MEMBER(DEVICE_SELF, tamaotchg1_state, input_changed, E0C6S48_LINE_K01)
-	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_CHANGED_MEMBER(DEVICE_SELF, tamaotchg1_state, input_changed, E0C6S48_LINE_K02)
-	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_CHANGED_MEMBER(DEVICE_SELF, tamaotchg1_state, input_changed, E0C6S48_LINE_K03) // "touch screen"
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(tamaotchg1_state::input_changed), E0C6S48_LINE_K00)
+	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(tamaotchg1_state::input_changed), E0C6S48_LINE_K01)
+	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(tamaotchg1_state::input_changed), E0C6S48_LINE_K02)
+	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(tamaotchg1_state::input_changed), E0C6S48_LINE_K03) // "touch screen"
 INPUT_PORTS_END
 
 
@@ -120,17 +112,17 @@ INPUT_PORTS_END
 void tamaotchg1_state::tamaotch(machine_config &config)
 {
 	/* basic machine hardware */
-	E0C6S48(config, m_maincpu, 32.768_kHz_XTAL);
+	E0C6S48_2(config, m_maincpu, 32.768_kHz_XTAL);
 	m_maincpu->set_pixel_update_cb(FUNC(tamaotchg1_state::pixel_update));
 	m_maincpu->write_r<4>().set("speaker", FUNC(speaker_sound_device::level_w)).bit(3);
 
 	/* video hardware */
-	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_LCD));
+	screen_device &screen(SCREEN(config, "screen").set_lcd());
 	screen.set_refresh_hz(32.768_kHz_XTAL/1024);
 	screen.set_vblank_time(ATTOSECONDS_IN_USEC(0));
 	screen.set_size(40, 16);
 	screen.set_visarea(0, 32-1, 0, 16-1);
-	screen.set_screen_update("maincpu", FUNC(e0c6s48_device::screen_update));
+	screen.set_screen_update("maincpu", FUNC(e0c6s48_device_2::screen_update));
 	screen.set_palette("palette");
 	config.set_default_layout(layout_tamaotch);
 

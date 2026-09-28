@@ -46,12 +46,12 @@ enum
 #define E0C6S48_PIXEL_UPDATE(name) void name(bitmap_ind16 &bitmap, const rectangle &cliprect, int contrast, int seg, int com, int state)
 
 
-class e0c6s48_device : public e0c6200_cpu_device
+class e0c6s48_device_2 : public e0c6200_cpu_device
 {
 public:
 	typedef device_delegate<void (bitmap_ind16 &bitmap, const rectangle &cliprect, int contrast, int seg, int com, int state)> pixel_update_delegate;
 
-	e0c6s48_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
+	e0c6s48_device_2(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
 
 	// 5 4-bit R output ports
 	template <std::size_t Port> auto write_r() { return m_write_r[Port].bind(); }
@@ -73,7 +73,6 @@ protected:
 	virtual void device_reset() override;
 
 	// device_execute_interface overrides
-	virtual u32 execute_input_lines() const noexcept override { return 8; }
 	virtual void execute_set_input(int line, int state) override;
 	virtual void execute_one() override;
 	virtual bool check_interrupt() override;
@@ -155,6 +154,6 @@ private:
 };
 
 
-DECLARE_DEVICE_TYPE(E0C6S48, e0c6s48_device)
+DECLARE_DEVICE_TYPE(E0C6S48_2, e0c6s48_device_2)
 
 #endif // MAME_CPU_E0C6200_E0C6S48_H

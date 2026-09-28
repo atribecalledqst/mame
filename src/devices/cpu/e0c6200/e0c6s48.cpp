@@ -27,34 +27,34 @@ enum
 	IRQREG_INPUT1
 };
 
-DEFINE_DEVICE_TYPE(E0C6S48, e0c6s48_device, "e0c6s48", "Seiko Epson E0C6S48")
+DEFINE_DEVICE_TYPE(E0C6S48_2, e0c6s48_device_2, "e0c6s48", "Seiko Epson E0C6S48")
 
 
 // internal memory maps
-void e0c6s48_device::e0c6s48_program(address_map &map)
+void e0c6s48_device_2::e0c6s48_program(address_map &map)
 {
 	map(0x0000, 0x1fff).rom();
 }
 
 
-void e0c6s48_device::e0c6s48_data(address_map &map)
+void e0c6s48_device_2::e0c6s48_data(address_map &map)
 {
 	map(0x0000, 0x02ff).ram();
 	map(0x0e00, 0x0e65).ram().share("vram1");
 	map(0x0e80, 0x0ee5).ram().share("vram2");
-	map(0x0f00, 0x0f7f).rw(FUNC(e0c6s48_device::io_r), FUNC(e0c6s48_device::io_w));
+	map(0x0f00, 0x0f7f).rw(FUNC(e0c6s48_device_2::io_r), FUNC(e0c6s48_device_2::io_w));
 }
 
 
 // device definitions
-e0c6s48_device::e0c6s48_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock)
-	: e0c6200_cpu_device(mconfig, E0C6S48, tag, owner, clock, address_map_constructor(FUNC(e0c6s48_device::e0c6s48_program), this), address_map_constructor(FUNC(e0c6s48_device::e0c6s48_data), this))
+e0c6s48_device_2::e0c6s48_device_2(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock)
+	: e0c6200_cpu_device(mconfig, E0C6S48_2, tag, owner, clock, address_map_constructor(FUNC(e0c6s48_device_2::e0c6s48_program), this), address_map_constructor(FUNC(e0c6s48_device_2::e0c6s48_data), this))
 	, m_vram1(*this, "vram1")
 	, m_vram2(*this, "vram2")
 	, m_osc(0), m_svd(0), m_lcd_control(0), m_lcd_contrast(0)
 	, m_pixel_update_cb(*this)
 	, m_write_r(*this)
-	, m_read_p(*this)
+	, m_read_p(*this, 0)
 	, m_write_p(*this)
 	, m_r_dir(0), m_p_dir(0), m_p_pullup(0), m_dfk0(0), m_256_src_pulse(0), m_core_256_handle(nullptr)
 	, m_watchdog_count(0), m_clktimer_count(0), m_stopwatch_on(0), m_swl_cur_pulse(0), m_swl_slice(0)
@@ -70,23 +70,18 @@ e0c6s48_device::e0c6s48_device(const machine_config &mconfig, const char *tag, d
 //  device_start - device-specific startup
 //-------------------------------------------------
 
-void e0c6s48_device::device_start()
+void e0c6s48_device_2::device_start()
 {
 	e0c6200_cpu_device::device_start();
-
-	// find ports
-	m_write_r.resolve_all_safe();
-	m_read_p.resolve_all_safe(0);
-	m_write_p.resolve_all_safe();
 
 	m_pixel_update_cb.resolve();
 
 	// create timers
-	m_core_256_handle = timer_alloc(FUNC(e0c6s48_device::core_256_cb), this);
+	m_core_256_handle = timer_alloc(FUNC(e0c6s48_device_2::core_256_cb), this);
 	m_core_256_handle->adjust(attotime::from_ticks(64, 32.768_kHz_XTAL));
-	m_prgtimer_handle = timer_alloc(FUNC(e0c6s48_device::prgtimer_cb), this);
+	m_prgtimer_handle = timer_alloc(FUNC(e0c6s48_device_2::prgtimer_cb), this);
 	m_prgtimer_handle->adjust(attotime::never);
-	m_buzzer_handle = timer_alloc(FUNC(e0c6s48_device::buzzer_cb), this);
+	m_buzzer_handle = timer_alloc(FUNC(e0c6s48_device_2::buzzer_cb), this);
 	m_buzzer_handle->adjust(attotime::never);
 
 	// zerofill
@@ -180,7 +175,7 @@ void e0c6s48_device::device_start()
 //  device_reset - device-specific reset
 //-------------------------------------------------
 
-void e0c6s48_device::device_reset()
+void e0c6s48_device_2::device_reset()
 {
 	e0c6200_cpu_device::device_reset();
 
@@ -219,7 +214,7 @@ void e0c6s48_device::device_reset()
 //  execute
 //-------------------------------------------------
 
-void e0c6s48_device::execute_one()
+void e0c6s48_device_2::execute_one()
 {
 	// E0C6S48 has no support for SLP opcode
 	if (m_op == 0xff9)
@@ -234,7 +229,7 @@ void e0c6s48_device::execute_one()
 //  interrupts
 //-------------------------------------------------
 
-bool e0c6s48_device::check_interrupt()
+bool e0c6s48_device_2::check_interrupt()
 {
 	// priority order is not the same as register order
 	static const int priorder[6] =
@@ -269,7 +264,7 @@ bool e0c6s48_device::check_interrupt()
 	return false;
 }
 
-void e0c6s48_device::execute_set_input(int line, int state)
+void e0c6s48_device_2::execute_set_input(int line, int state)
 {
 	// only support 8 K input lines at the moment
 	if (line < 0 || line > 7)
@@ -290,7 +285,7 @@ void e0c6s48_device::execute_set_input(int line, int state)
 
 // R output ports
 
-void e0c6s48_device::write_r(u8 port, u8 data)
+void e0c6s48_device_2::write_r(u8 port, u8 data)
 {
 	data &= 0xf;
 	m_port_r[port] = data;
@@ -320,7 +315,7 @@ void e0c6s48_device::write_r(u8 port, u8 data)
 	}
 }
 
-void e0c6s48_device::write_r4_out()
+void e0c6s48_device_2::write_r4_out()
 {
 	// R40: _FOUT(clock inverted output)
 	// R42: FOUT or _BZ
@@ -332,7 +327,7 @@ void e0c6s48_device::write_r4_out()
 
 // P I/O ports
 
-void e0c6s48_device::write_p(u8 port, u8 data)
+void e0c6s48_device_2::write_p(u8 port, u8 data)
 {
 	data &= 0xf;
 	m_port_p[port] = data;
@@ -347,7 +342,7 @@ void e0c6s48_device::write_p(u8 port, u8 data)
 	m_write_p[port](port, data, 0xff);
 }
 
-u8 e0c6s48_device::read_p(u8 port)
+u8 e0c6s48_device_2::read_p(u8 port)
 {
 	// return written value if port direction is set to output
 	if (m_p_dir >> port & 1)
@@ -362,7 +357,7 @@ u8 e0c6s48_device::read_p(u8 port)
 //  timers
 //-------------------------------------------------
 
-TIMER_CALLBACK_MEMBER(e0c6s48_device::core_256_cb)
+TIMER_CALLBACK_MEMBER(e0c6s48_device_2::core_256_cb)
 {
 	// clock-timer, stopwatch timer, and some features of the buzzer all run
 	// from the same internal 256hz timer (64 ticks high+low at default clock of 32768hz)
@@ -387,7 +382,7 @@ TIMER_CALLBACK_MEMBER(e0c6s48_device::core_256_cb)
 
 // clock-timer
 
-void e0c6s48_device::clock_watchdog()
+void e0c6s48_device_2::clock_watchdog()
 {
 	// initial reset after 3 to 4 seconds
 	if (++m_watchdog_count == 4)
@@ -398,7 +393,7 @@ void e0c6s48_device::clock_watchdog()
 	}
 }
 
-void e0c6s48_device::clock_clktimer()
+void e0c6s48_device_2::clock_clktimer()
 {
 	m_clktimer_count++;
 
@@ -425,7 +420,7 @@ void e0c6s48_device::clock_clktimer()
 
 // stopwatch timer
 
-void e0c6s48_device::clock_stopwatch()
+void e0c6s48_device_2::clock_stopwatch()
 {
 	m_swl_slice++;
 
@@ -458,7 +453,7 @@ void e0c6s48_device::clock_stopwatch()
 
 // programmable timer
 
-void e0c6s48_device::clock_prgtimer()
+void e0c6s48_device_2::clock_prgtimer()
 {
 	// irq and reload when it reaches zero
 	if (--m_prgtimer_count == 0)
@@ -472,7 +467,7 @@ void e0c6s48_device::clock_prgtimer()
 	}
 }
 
-bool e0c6s48_device::prgtimer_reset_prescaler()
+bool e0c6s48_device_2::prgtimer_reset_prescaler()
 {
 	// only 2 to 7 are clock dividers
 	u8 sel = m_prgtimer_select & 7;
@@ -482,7 +477,7 @@ bool e0c6s48_device::prgtimer_reset_prescaler()
 	return (sel >= 2);
 }
 
-TIMER_CALLBACK_MEMBER(e0c6s48_device::prgtimer_cb)
+TIMER_CALLBACK_MEMBER(e0c6s48_device_2::prgtimer_cb)
 {
 	// check if it's clocked by osc1, schedule next timeout
 	if (!prgtimer_reset_prescaler())
@@ -499,7 +494,7 @@ TIMER_CALLBACK_MEMBER(e0c6s48_device::prgtimer_cb)
 
 // buzzer
 
-void e0c6s48_device::schedule_buzzer()
+void e0c6s48_device_2::schedule_buzzer()
 {
 	// only schedule next buzzer timeout if it's on
 	if (m_bz_43_on != 0 && !m_bz_1shot_running)
@@ -518,7 +513,7 @@ void e0c6s48_device::schedule_buzzer()
 	m_buzzer_handle->adjust(attotime::from_ticks(m_bz_pulse ? high : low, mul * 32.768_kHz_XTAL));
 }
 
-TIMER_CALLBACK_MEMBER(e0c6s48_device::buzzer_cb)
+TIMER_CALLBACK_MEMBER(e0c6s48_device_2::buzzer_cb)
 {
 	// invert pulse wave and write to output
 	m_bz_pulse ^= 1;
@@ -527,14 +522,14 @@ TIMER_CALLBACK_MEMBER(e0c6s48_device::buzzer_cb)
 	schedule_buzzer();
 }
 
-void e0c6s48_device::reset_buzzer()
+void e0c6s48_device_2::reset_buzzer()
 {
 	// don't reset if the timer is running
 	if (m_buzzer_handle->remaining() == attotime::never)
 		schedule_buzzer();
 }
 
-void e0c6s48_device::clock_bz_1shot()
+void e0c6s48_device_2::clock_bz_1shot()
 {
 	m_bz_1shot_running = true;
 
@@ -559,7 +554,7 @@ void e0c6s48_device::clock_bz_1shot()
 //  LCD Driver
 //-------------------------------------------------
 
-u32 e0c6s48_device::screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect)
+u32 e0c6s48_device_2::screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect)
 {
 	// call this 32 times per second (osc1/1024: 32hz at default clock of 32768hz)
 	for (int bank = 0; bank < 2; bank++)
@@ -605,7 +600,7 @@ u32 e0c6s48_device::screen_update(screen_device &screen, bitmap_ind16 &bitmap, c
 //  internal I/O
 //-------------------------------------------------
 
-u8 e0c6s48_device::io_r(offs_t offset)
+u8 e0c6s48_device_2::io_r(offs_t offset)
 {
 	switch (offset)
 	{
@@ -701,7 +696,7 @@ u8 e0c6s48_device::io_r(offs_t offset)
 	return 0;
 }
 
-void e0c6s48_device::io_w(offs_t offset, u8 data)
+void e0c6s48_device_2::io_w(offs_t offset, u8 data)
 {
 	switch (offset)
 	{
